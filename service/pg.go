@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewPg(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) {
+func NewDb(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) {
 	dburl := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		DbHost,
 		DbUser,
@@ -28,8 +28,8 @@ func NewPg(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) 
 	return db, nil
 }
 
-func SetupDb() (*gorm.DB, error) {
-	err := godotenv.Load("../.env.development")
+func ConnectDb() (*gorm.DB, error) {
+	err := godotenv.Load(".env.development")
 	if err != nil {
 		return nil, err
 	}
@@ -40,21 +40,26 @@ func SetupDb() (*gorm.DB, error) {
 	DbHost := os.Getenv("POSTGRES_HOST")
 	DbName := os.Getenv("POSTGRES_DB")
 
-	db, err := NewPg(DbUser, DbPassword, DbPort, DbHost, DbName)
+	db, err := NewDb(DbUser, DbPassword, DbPort, DbHost, DbName)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("fail connect to Db")
 	}
 
+	return db, nil
+}
+
+func MigrateDb(db *gorm.DB) error {
+
 	db.Migrator().DropTable(
-		&model.ProgrammingLanguage{},
+		&model.Technology{},
 		&model.Field{},
 		&model.User{},
 		&model.Profile{},
 		&model.PlanService{},
 		&model.BookingPlanService{},
 	)
-	err = db.AutoMigrate(
-		&model.ProgrammingLanguage{},
+	err := db.AutoMigrate(
+		&model.Technology{},
 		&model.Field{},
 		&model.User{},
 		&model.Profile{},
@@ -62,14 +67,13 @@ func SetupDb() (*gorm.DB, error) {
 	)
 
 	if err != nil {
-		return nil, errors.New("err automigrate")
+		return errors.New("err automigrate")
 	}
 
 	err = db.SetupJoinTable(&model.User{}, "BookingPlanServices", &model.BookingPlanService{})
 
 	if err != nil {
-		return nil, errors.New("error setup join table")
+		return errors.New("error setup join table")
 	}
-
-	return db, nil
+	return nil
 }
