@@ -2,23 +2,70 @@ package model
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
 type Profile struct {
-	ID           uint           `json:"id,omitempty"`
-	UserID       uint           `json:"user_id,omitempty"`
-	Technologies []Technology   `gorm:"many2many:profile_technologies;" json:"technologies,omitempty"`
-	Fields       []Field        `gorm:"many2many:profile_fields;" json:"fields,omitempty"`
+	UserID       uint64         `gorm:"primaryKey" json:"user_id,omitempty"`
+	Technologies []Technology   `gorm:"many2many:profile_technologies;foreignKey:UserID;joinForeignkey:ProfileUserID" json:"technologies,omitempty"`
+	Fields       []Field        `gorm:"many2many:profile_fields;foreignKey:UserID;joinForeignkey:ProfileUserID" json:"fields,omitempty"`
 	Contact      string         `sql:"type:JSONB NOT NULL DEFAULT '{}'::JSONB" json:"contact,omitempty"`
 	Description  sql.NullString `json:"description,omitempty"`
 	CreatedAt    time.Time      `gorm:"default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	UpdatedAt    time.Time      `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
 }
 
+type ProfileJSON struct {
+	UserID       uint64            `json:"user_id,omitempty"`
+	Technologies []Technology      `json:"technologies,omitempty"`
+	Fields       []Field           `json:"fields,omitempty"`
+	Contact      map[string]string `json:"contact,omitempty"`
+	Description  string            `json:"description,omitempty"`
+}
+
 type ProfileRepository interface {
-	Create(interface{}) error
+	Create(*Profile) error
 	// Get(int) (*Profile, error)
-	// Update(*Profile) error
+	Update(*Profile) error
 	// Delete(*Profile) error
+}
+
+func FromStringToSqlNullString(str string) sql.NullString {
+	result := sql.NullString{}
+	if str != "" {
+		result.Valid = true
+		result.String = str
+	} else {
+		result.Valid = false
+	}
+
+	return result
+}
+
+func ContactToString(contact map[string]string) (string, error) {
+	// from map using json.marsahll -> json ([]byte)-> string
+	var strContact string
+	b, err := json.Marshal(contact)
+	if err != nil {
+		return "", err
+	}
+	strContact = string(b)
+	return strContact, nil
+}
+
+func (pJSON *ProfileJSON) ToProfile() (*Profile, error) {
+	descritption := FromStringToSqlNullString(pJSON.Description)
+	contact, err := ContactToString(pJSON.Contact)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Profile{
+		UserID:       pJSON.UserID,
+		Technologies: pJSON.Technologies,
+		Fields:       pJSON.Fields,
+		Contact:      contact,      //from map[string]string to string
+		Description:  descritption, //from string to sql.NullString
+	}, nil
 }

@@ -36,9 +36,29 @@ func (userDb *UserDb) CreateUser(user *model.User) error {
 	return nil
 }
 
-func (userDb *UserDb) GetUserById(userId uint) (*model.User, error) {
+func (userDb *UserDb) GetUserById(userId uint64) (*model.User, error) {
 	var user model.User
 	err := userDb.Db.First(&user, userId).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (userDb *UserDb) GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
+	err := userDb.Db.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (userDb *UserDb) GetUserByUserName(userName string) (*model.User, error) {
+	var user model.User
+	err := userDb.Db.Where("user_name = ?", userName).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -57,5 +77,9 @@ func (userDb *UserDb) GetAllUsers() ([]model.User, error) {
 }
 
 func (userDb *UserDb) UpdateUser(user *model.User) error {
+	err := userDb.Db.Model(&user).Updates(user).Error
+	if err != nil {
+		return err
+	}
 	return nil
 }

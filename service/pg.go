@@ -3,9 +3,8 @@ package service
 import (
 	"errors"
 	"fmt"
-	"os"
 
-	"github.com/joho/godotenv"
+	"github.com/ueihvn/go-devduo/config"
 	"github.com/ueihvn/go-devduo/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -29,18 +28,14 @@ func NewDb(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) 
 }
 
 func ConnectDb() (*gorm.DB, error) {
-	err := godotenv.Load(".env.development")
-	if err != nil {
-		return nil, err
-	}
-
-	DbUser := os.Getenv("POSTGRES_USER")
-	DbPassword := os.Getenv("POSTGRES_PASSWORD")
-	DbPort := os.Getenv("POSTGRES_PORT")
-	DbHost := os.Getenv("POSTGRES_HOST")
-	DbName := os.Getenv("POSTGRES_DB")
-
-	db, err := NewDb(DbUser, DbPassword, DbPort, DbHost, DbName)
+	dbConfig := config.NewConfig()
+	db, err := NewDb(
+		dbConfig.PostgresUser,
+		dbConfig.PostgresPassword,
+		dbConfig.PostgrePort,
+		dbConfig.PostgresHost,
+		dbConfig.PostgresDb,
+	)
 	if err != nil {
 		return nil, errors.New("fail connect to Db")
 	}
@@ -64,16 +59,29 @@ func MigrateDb(db *gorm.DB) error {
 		&model.User{},
 		&model.Profile{},
 		&model.PlanService{},
+		&model.BookingPlanService{},
 	)
 
 	if err != nil {
 		return errors.New("err automigrate")
 	}
 
-	err = db.SetupJoinTable(&model.User{}, "BookingPlanServices", &model.BookingPlanService{})
+	return nil
+}
 
+func InitData(db *gorm.DB) error {
+
+	tDb := NewTechnologyRepository(db)
+	err := tDb.InitData()
 	if err != nil {
-		return errors.New("error setup join table")
+		return errors.New("err tech InitData")
 	}
+
+	fDb := NewFieldRepository(db)
+	err = fDb.InitData()
+	if err != nil {
+		return errors.New("err field InitData")
+	}
+
 	return nil
 }

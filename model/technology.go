@@ -1,7 +1,7 @@
 package model
 
 type Technology struct {
-	ID   uint   `gorm:"primaryKey;auto_increment" json:"id,omitempty"`
+	ID   uint64 `gorm:"primaryKey;auto_increment" json:"id,omitempty"`
 	Name string `gorm:"not null;unique" json:"name,omitempty"`
 }
 
