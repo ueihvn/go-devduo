@@ -26,7 +26,7 @@ type ProfileJSON struct {
 
 type ProfileRepository interface {
 	Create(*Profile) error
-	// Get(int) (*Profile, error)
+	Get(uint64) (*Profile, error)
 	Update(*Profile) error
 	// Delete(*Profile) error
 }
@@ -54,6 +54,18 @@ func ContactToString(contact map[string]string) (string, error) {
 	return strContact, nil
 }
 
+func FromStringToContact(strContact string) (map[string]string, error) {
+
+	b := []byte(strContact)
+	var contact map[string]string
+	err := json.Unmarshal(b, &contact)
+	if err != nil {
+		return nil, err
+	}
+	return contact, nil
+
+}
+
 func (pJSON *ProfileJSON) ToProfile() (*Profile, error) {
 	descritption := FromStringToSqlNullString(pJSON.Description)
 	contact, err := ContactToString(pJSON.Contact)
@@ -68,4 +80,19 @@ func (pJSON *ProfileJSON) ToProfile() (*Profile, error) {
 		Contact:      contact,      //from map[string]string to string
 		Description:  descritption, //from string to sql.NullString
 	}, nil
+}
+
+func (profile *Profile) ToProfileJSON() (*ProfileJSON, error) {
+	contact, err := FromStringToContact(profile.Contact)
+	if err != nil {
+		return nil, err
+	}
+	return &ProfileJSON{
+		UserID:       profile.UserID,
+		Technologies: profile.Technologies,
+		Fields:       profile.Fields,
+		Contact:      contact,
+		Description:  profile.Description.String,
+	}, nil
+
 }

@@ -79,7 +79,10 @@ func (userDb *UserDb) GetAllUsers() ([]model.User, error) {
 func (userDb *UserDb) UpdateUser(user *model.User) error {
 	err := userDb.Db.Model(&user).Updates(user).Error
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "WHERE") {
+			return errors.New("missing user ID")
+		}
+		return errors.New("database err")
 	}
 	return nil
 }

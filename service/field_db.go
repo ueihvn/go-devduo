@@ -49,7 +49,7 @@ func (fieldDb *FieldDb) Get(fieldName string) (*model.Field, error) {
 	return &field, nil
 }
 
-func (fieldDb *FieldDb) GetFieldsByUserId(userId int) ([]model.Field, error) {
+func (fieldDb *FieldDb) GetFieldsByUserId(userId uint64) ([]model.Field, error) {
 	var fields []model.Field
 	err := fieldDb.Db.Table("fields").
 		Select("fields.name,fields.id").

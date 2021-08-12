@@ -4,8 +4,12 @@ import (
 	"strconv"
 )
 
-func parseID(idJSON string) uint64 {
+func parseID(idJSON string) (uint64, error) {
 
-	id, _ := strconv.ParseUint(idJSON, 10, 8)
-	return id
+	id, err := strconv.ParseUint(idJSON, 10, 8)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }

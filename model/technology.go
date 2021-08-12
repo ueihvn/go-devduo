@@ -10,4 +10,5 @@ type TechnologyRepository interface {
 	Get(string) (*Technology, error)
 	GetAll() ([]Technology, error)
 	Delete(*Technology) error
+	GetTechnologiesByUserId(uint64) ([]Technology, error)
 }

@@ -1,6 +1,9 @@
 package service
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/ueihvn/go-devduo/model"
 	"gorm.io/gorm"
 )
@@ -23,7 +26,6 @@ func NewProfileRepository(db *gorm.DB) *ProfileDb {
 
 func (profileDb *ProfileDb) Create(profile *model.Profile) error {
 	err := profileDb.Db.Omit("Technologies.*", "Fields.*").
-		Preload("Technologies").Preload("Fields").
 		Create(&profile).Error
 	if err != nil {
 		return err
@@ -36,6 +38,9 @@ func (profileDb *ProfileDb) Get(userId uint64) (*model.Profile, error) {
 	var profile model.Profile
 	err := profileDb.Db.Where("user_id", userId).First(&profile).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, errors.New("user no found")
+		}
 		return nil, err
 	}
 

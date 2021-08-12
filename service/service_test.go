@@ -135,22 +135,23 @@ func TestGetProfile(t *testing.T) {
 		t.Error("error connect db")
 	}
 	profileDb := NewProfileDb(db)
+	userID := uint64(4)
 
 	// getfields
 	fieldDb := NewFieldRepository(db)
-	fields, err := fieldDb.GetFieldsByUserId(1)
+	fields, err := fieldDb.GetFieldsByUserId(userID)
 	if err != nil {
 		t.Errorf("err profileDb.GetFieldsByUserId - err: %s", err)
 	}
 
 	// gettechs
 	techDb := NewTechnologyRepository(db)
-	techs, err := techDb.GetTechnologiesByUserId(1)
+	techs, err := techDb.GetTechnologiesByUserId(userID)
 	if err != nil {
 		t.Errorf("err technologyDb.GetTechnologiesByUserId - err: %s", err)
 	}
 
-	profile, err := profileDb.Get(1)
+	profile, err := profileDb.Get(userID)
 	if err != nil {
 		t.Errorf("error profileDb.Get- err: %s", err)
 	}

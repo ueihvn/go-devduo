@@ -9,24 +9,23 @@ import (
 	"github.com/ueihvn/go-devduo/model"
 )
 
-type UserHandler struct {
-	ur model.UserRepository
+type BookingPlanServiceHandler struct {
+	bpsr model.BookingPlanServiceRepository
 }
 
-func NewUserHandler(userRepository model.UserRepository) *UserHandler {
-	return &UserHandler{
-		ur: userRepository,
+func NewBookingPlanServiceHandler(bpsRepo model.BookingPlanServiceRepository) *BookingPlanServiceHandler {
+	return &BookingPlanServiceHandler{
+		bpsr: bpsRepo,
 	}
 }
 
-// create handler function
-func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (bpsH *BookingPlanServiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	b := r.ContentLength
 	body := make([]byte, b)
 	r.Body.Read(body)
 
-	var user model.User
-	err := json.Unmarshal(body, &user)
+	var bps model.BookingPlanService
+	err := json.Unmarshal(body, &bps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -35,16 +34,16 @@ func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// + validate
-	err = u.ur.CreateUser(&user)
+	err = bpsH.bpsr.Create(&bps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
 	responseMap := map[string]interface{}{
-		"id": user.ID,
+		"id": bps.ID,
 	}
 
 	responseJSON, err := json.Marshal(responseMap)
@@ -59,24 +58,17 @@ func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseJSON)
 }
 
-func (u *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
+func (bpsH *BookingPlanServiceHandler) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userId, err := parseID(vars["id"])
+	bpsID, err := parseID(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
-	user, err := u.ur.GetUserById(userId)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	userJSON, err := json.Marshal(user)
+	bookingPlanService, err := bpsH.bpsr.Get(bpsID)
+	bpsJSON, err := json.Marshal(bookingPlanService)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -85,16 +77,17 @@ func (u *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(userJSON)
+	w.Write(bpsJSON)
 }
 
-func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
+func (bpsH *BookingPlanServiceHandler) Update(w http.ResponseWriter, r *http.Request) {
+
 	b := r.ContentLength
 	body := make([]byte, b)
 	r.Body.Read(body)
 
-	var user model.User
-	err := json.Unmarshal(body, &user)
+	var bps model.BookingPlanService
+	err := json.Unmarshal(body, &bps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -102,7 +95,7 @@ func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.ur.UpdateUser(&user)
+	err = bpsH.bpsr.Update(&bps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -110,7 +103,7 @@ func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJSON, err := json.Marshal(user)
+	responseJSON, err := json.Marshal(bps)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

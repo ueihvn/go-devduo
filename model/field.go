@@ -10,4 +10,5 @@ type FieldRepository interface {
 	Get(string) (*Field, error)
 	GetAll() ([]Field, error)
 	Delete(*Field) error
+	GetFieldsByUserId(userId uint64) ([]Field, error)
 }

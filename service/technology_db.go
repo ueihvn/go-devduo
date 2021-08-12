@@ -49,7 +49,7 @@ func (technologyDb *TechnologyDb) Get(techName string) (*model.Technology, error
 	return &technology, nil
 }
 
-func (technologyDb *TechnologyDb) GetTechnologiesByUserId(userId int) ([]model.Technology, error) {
+func (technologyDb *TechnologyDb) GetTechnologiesByUserId(userId uint64) ([]model.Technology, error) {
 	var techs []model.Technology
 	err := technologyDb.Db.Table("technologies").
 		Select("technologies.name,technologies.id").

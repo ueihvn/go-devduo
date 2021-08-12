@@ -9,24 +9,23 @@ import (
 	"github.com/ueihvn/go-devduo/model"
 )
 
-type UserHandler struct {
-	ur model.UserRepository
+type PlanServiceHandler struct {
+	psr model.PlanServiceRepository
 }
 
-func NewUserHandler(userRepository model.UserRepository) *UserHandler {
-	return &UserHandler{
-		ur: userRepository,
+func NewPlanServiceHandler(psRepo model.PlanServiceRepository) *PlanServiceHandler {
+	return &PlanServiceHandler{
+		psr: psRepo,
 	}
 }
 
-// create handler function
-func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (psH *PlanServiceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	b := r.ContentLength
 	body := make([]byte, b)
 	r.Body.Read(body)
 
-	var user model.User
-	err := json.Unmarshal(body, &user)
+	var ps model.PlanService
+	err := json.Unmarshal(body, &ps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -35,16 +34,16 @@ func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// + validate
-	err = u.ur.CreateUser(&user)
+	err = psH.psr.Create(&ps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
 	responseMap := map[string]interface{}{
-		"id": user.ID,
+		"id": ps.ID,
 	}
 
 	responseJSON, err := json.Marshal(responseMap)
@@ -57,26 +56,20 @@ func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseJSON)
+
 }
 
-func (u *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
+func (psH *PlanServiceHandler) Get(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	userId, err := parseID(vars["id"])
+	psID, err := parseID(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
-	user, err := u.ur.GetUserById(userId)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	userJSON, err := json.Marshal(user)
+	planService, err := psH.psr.Get(psID)
+	psJSON, err := json.Marshal(planService)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -85,16 +78,16 @@ func (u *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(userJSON)
+	w.Write(psJSON)
 }
 
-func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
+func (psH *PlanServiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	b := r.ContentLength
 	body := make([]byte, b)
 	r.Body.Read(body)
 
-	var user model.User
-	err := json.Unmarshal(body, &user)
+	var ps model.PlanService
+	err := json.Unmarshal(body, &ps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -102,7 +95,7 @@ func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.ur.UpdateUser(&user)
+	err = psH.psr.Update(&ps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -110,7 +103,7 @@ func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseJSON, err := json.Marshal(user)
+	responseJSON, err := json.Marshal(ps)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
