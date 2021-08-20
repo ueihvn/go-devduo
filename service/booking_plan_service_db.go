@@ -44,3 +44,17 @@ func (bps *BookingPlanServiceDb) Update(bookingPlanService *model.BookingPlanSer
 	}
 	return nil
 }
+
+func (bps *BookingPlanServiceDb) CountUserBookPlanServiceByUserID(userID uint64) (uint64, error) {
+	var count int64
+
+	err := bps.Db.Model(&model.BookingPlanService{}).
+		Joins("inner join plan_services on booking_plan_services.plan_service_id = plan_services.id").
+		Distinct("booking_plan_services.user_id").
+		Where("plan_services.user_id = ?", userID).
+		Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return uint64(count), nil
+}

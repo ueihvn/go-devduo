@@ -15,4 +15,6 @@ type PlanServiceRepository interface {
 	Create(*PlanService) error
 	Get(uint64) (*PlanService, error)
 	Update(*PlanService) error
+	GetPlanServiceByUserID(uint64) ([]PlanService, error)
+	GetSmallestPricePlanServiceByUserID(uint64) (*decimal.Decimal, error)
 }

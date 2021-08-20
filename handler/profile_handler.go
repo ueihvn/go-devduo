@@ -83,23 +83,6 @@ func (p *ProfileHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	techs, err := p.tr.GetTechnologiesByUserId(userID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	fields, err := p.fr.GetFieldsByUserId(userID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	profile.Technologies = techs
-	profile.Fields = fields
-
 	profileJSON, err := profile.ToProfileJSON()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -44,6 +44,26 @@ func (profileDb *ProfileDb) Get(userId uint64) (*model.Profile, error) {
 		return nil, err
 	}
 
+	var techs []model.Technology
+	err = profileDb.Db.Table("technologies").
+		Select("technologies.name,technologies.id").
+		Joins("left join profile_technologies on technologies.id = profile_technologies.technology_id").
+		Where("profile_technologies.profile_user_id = ?", userId).Find(&techs).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var fields []model.Field
+	err = profileDb.Db.Table("fields").
+		Select("fields.name,fields.id").
+		Joins("left join profile_fields on fields.id = profile_fields.field_id").
+		Where("profile_fields.profile_user_id = ?", userId).Find(&fields).Error
+	if err != nil {
+		return nil, err
+	}
+	profile.Technologies = techs
+	profile.Fields = fields
+
 	return &profile, nil
 }
 
@@ -66,4 +86,37 @@ func (profileDb *ProfileDb) Update(profile *model.Profile) error {
 	}
 
 	return nil
+}
+
+func (profileDb *ProfileDb) GetFromOffsetToLimitOfProfile(offset, limit int) ([]model.Profile, error) {
+	var profiles []model.Profile
+
+	if offset == 0 {
+		err := profileDb.Db.Limit(limit).Find(&profiles).Error
+		if err != nil {
+			return nil, err
+		}
+		return profiles, nil
+	}
+
+	err := profileDb.Db.Limit(limit).Offset(offset).Find(&profiles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return profiles, nil
+
+}
+
+func (profileDb *ProfileDb) GetWithLimitLastID(limit int, last_id uint64) ([]model.Profile, error) {
+
+	var profiles []model.Profile
+
+	err := profileDb.Db.Limit(limit).Where("user_id > ?", last_id).Find(&profiles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return profiles, nil
+
 }

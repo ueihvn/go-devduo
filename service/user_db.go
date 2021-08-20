@@ -56,16 +56,6 @@ func (userDb *UserDb) GetUserByEmail(email string) (*model.User, error) {
 	return &user, nil
 }
 
-func (userDb *UserDb) GetUserByUserName(userName string) (*model.User, error) {
-	var user model.User
-	err := userDb.Db.Where("user_name = ?", userName).First(&user).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &user, nil
-}
-
 func (userDb *UserDb) GetAllUsers() ([]model.User, error) {
 	var users []model.User
 	err := userDb.Db.Find(&users).Error
@@ -85,4 +75,40 @@ func (userDb *UserDb) UpdateUser(user *model.User) error {
 		return errors.New("database err")
 	}
 	return nil
+}
+
+func (userDb *UserDb) InitData() error {
+
+	users := []model.User{
+		{
+			Password: "passworduser1",
+			Email:    "email1@gmail.com",
+		},
+		{
+			Password: "passworduser2",
+			Email:    "email2@gmail.com",
+		},
+		{
+			Password: "passworduser3",
+			Email:    "email3@gmail.com",
+		},
+		{
+			Password: "passworduser4",
+			Email:    "email3@gmail.com",
+		},
+		{
+			Password: "passworduser5",
+			Email:    "email5@gmail.com",
+		},
+	}
+
+	for _, user := range users {
+		err := userDb.CreateUser(&user)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+
 }

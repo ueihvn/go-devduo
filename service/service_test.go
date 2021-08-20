@@ -49,8 +49,6 @@ func TestCreateUser(t *testing.T) {
 	userDb := NewUserRepository(db)
 
 	user := model.User{
-		FullName: "full name user test",
-		UserName: "Username1",
 		Password: "passwordusertest",
 		Email:    "email1@gmail.com",
 	}
@@ -82,6 +80,21 @@ func TestUpdateUser(t *testing.T) {
 	}
 }
 
+func TestGetUserByEmail(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+
+	userDb := NewUserRepository(db)
+	email := "email4@gmail.com"
+	user, err := userDb.GetUserByEmail(email)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("%+v\n", user)
+}
+
 //test profile_db.go
 func TestCreateProfile(t *testing.T) {
 	db, err := ConnectDb()
@@ -92,7 +105,8 @@ func TestCreateProfile(t *testing.T) {
 	profileDb := NewProfileDb(db)
 
 	pJSON := model.ProfileJSON{
-		UserID: 2,
+		UserID:   2,
+		FullName: "full name ne",
 		Technologies: []model.Technology{
 			{
 				ID:   1,
@@ -126,7 +140,6 @@ func TestCreateProfile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestGetProfile(t *testing.T) {
@@ -169,7 +182,8 @@ func TestUpdateProfile(t *testing.T) {
 	profileDb := NewProfileDb(db)
 
 	pJSON := model.ProfileJSON{
-		UserID: 1,
+		UserID:   1,
+		FullName: "full name nua ne",
 		Technologies: []model.Technology{
 			{
 				ID:   7,
@@ -203,6 +217,20 @@ func TestUpdateProfile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestGetProfileOL(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+	profileDb := NewProfileDb(db)
+
+	profiles, err := profileDb.GetFromOffsetToLimitOfProfile(0, 50)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(profiles)
 
 }
 
@@ -236,4 +264,55 @@ func TestGetTechnologiesByUserId(t *testing.T) {
 		t.Errorf("err technologyDb.GetTechnologiesByUserId - err: %s", err)
 	}
 	fmt.Println(techs)
+}
+
+// test plan_service.go
+func TestGetSmallestPricePS(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+
+	psDb := NewPlanServiceRepository(db)
+	sp, err := psDb.GetSmallestPricePlanServiceByUserID(1)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(sp)
+}
+
+func TestGetCountUser(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+
+	bpsDb := NewBookingPlanServiceRepository(db)
+	count, err := bpsDb.CountUserBookPlanServiceByUserID(1)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(count)
+
+}
+
+// test booking_plan_services
+func TestCreateBookingPlanService(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+
+	bps := model.BookingPlanService{
+		UserID:        3,
+		PlanServiceID: 2,
+	}
+	bpsDb := NewBookingPlanServiceRepository(db)
+	err = bpsDb.Create(&bps)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Printf("%+v\n", bps)
+
 }

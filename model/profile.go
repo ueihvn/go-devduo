@@ -8,9 +8,11 @@ import (
 
 type Profile struct {
 	UserID       uint64         `gorm:"primaryKey" json:"user_id,omitempty"`
+	FullName     string         `gorm:"not null" json:"full_name,omitempty"`
 	Technologies []Technology   `gorm:"many2many:profile_technologies;foreignKey:UserID;joinForeignkey:ProfileUserID" json:"technologies,omitempty"`
 	Fields       []Field        `gorm:"many2many:profile_fields;foreignKey:UserID;joinForeignkey:ProfileUserID" json:"fields,omitempty"`
 	Contact      string         `sql:"type:JSONB NOT NULL DEFAULT '{}'::JSONB" json:"contact,omitempty"`
+	ThumnailURL  string         `gorm:"null" json:"thumnail_url,omitempty"`
 	Description  sql.NullString `json:"description,omitempty"`
 	CreatedAt    time.Time      `gorm:"default:CURRENT_TIMESTAMP" json:"created_at,omitempty"`
 	UpdatedAt    time.Time      `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
@@ -18,6 +20,7 @@ type Profile struct {
 
 type ProfileJSON struct {
 	UserID       uint64            `json:"user_id,omitempty"`
+	FullName     string            `json:"full_name,omitempty"`
 	Technologies []Technology      `json:"technologies,omitempty"`
 	Fields       []Field           `json:"fields,omitempty"`
 	Contact      map[string]string `json:"contact,omitempty"`
@@ -28,6 +31,8 @@ type ProfileRepository interface {
 	Create(*Profile) error
 	Get(uint64) (*Profile, error)
 	Update(*Profile) error
+	GetFromOffsetToLimitOfProfile(int, int) ([]Profile, error)
+	GetWithLimitLastID(int, uint64) ([]Profile, error)
 	// Delete(*Profile) error
 }
 
@@ -75,6 +80,7 @@ func (pJSON *ProfileJSON) ToProfile() (*Profile, error) {
 
 	return &Profile{
 		UserID:       pJSON.UserID,
+		FullName:     pJSON.FullName,
 		Technologies: pJSON.Technologies,
 		Fields:       pJSON.Fields,
 		Contact:      contact,      //from map[string]string to string
@@ -89,6 +95,7 @@ func (profile *Profile) ToProfileJSON() (*ProfileJSON, error) {
 	}
 	return &ProfileJSON{
 		UserID:       profile.UserID,
+		FullName:     profile.FullName,
 		Technologies: profile.Technologies,
 		Fields:       profile.Fields,
 		Contact:      contact,

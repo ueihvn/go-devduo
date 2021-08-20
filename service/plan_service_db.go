@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/shopspring/decimal"
 	"github.com/ueihvn/go-devduo/model"
 	"gorm.io/gorm"
 )
@@ -49,4 +51,29 @@ func (ps *PlanServiceDb) Update(planService *model.PlanService) error {
 		return err
 	}
 	return nil
+}
+func (ps *PlanServiceDb) GetPlanServiceByUserID(userId uint64) ([]model.PlanService, error) {
+	var planServices []model.PlanService
+	err := ps.Db.Where("user_id = ?", userId).Find(&planServices).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return planServices, err
+}
+
+func (ps *PlanServiceDb) GetSmallestPricePlanServiceByUserID(userID uint64) (*decimal.Decimal, error) {
+	result := struct {
+		Min decimal.Decimal
+	}{
+		Min: decimal.Decimal{},
+	}
+	err := ps.Db.Model(&model.PlanService{}).Select("user_id, MIN(price)").Group("user_id").Having("user_id = ?", userID).Find(&result).Error
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%+v\n", result)
+
+	// res, _ := decimal.NewFromString(result.min)
+	return &result.Min, nil
 }
