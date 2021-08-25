@@ -28,11 +28,15 @@ type ProfileJSON struct {
 }
 
 type ProfileRepository interface {
+	InitData() error
 	Create(*Profile) error
 	Get(uint64) (*Profile, error)
 	Update(*Profile) error
 	GetFromOffsetToLimitOfProfile(int, int) ([]Profile, error)
 	GetWithLimitLastID(int, uint64) ([]Profile, error)
+	FilterProfileByFields([]uint64) ([]Profile, error)
+	FilterProfileByTechs([]uint64) ([]Profile, error)
+	FilterProfileByFieldsTechs([]uint64, []uint64) ([]Profile, error)
 	// Delete(*Profile) error
 }
 

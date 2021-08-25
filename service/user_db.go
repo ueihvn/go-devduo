@@ -94,7 +94,7 @@ func (userDb *UserDb) InitData() error {
 		},
 		{
 			Password: "passworduser4",
-			Email:    "email3@gmail.com",
+			Email:    "email4@gmail.com",
 		},
 		{
 			Password: "passworduser5",
@@ -103,7 +103,13 @@ func (userDb *UserDb) InitData() error {
 	}
 
 	for _, user := range users {
-		err := userDb.CreateUser(&user)
+		hashedPassword, err := user.HashPassword()
+		if err != nil {
+			return err
+		}
+		user.Password = hashedPassword
+
+		err = userDb.CreateUser(&user)
 		if err != nil {
 			return err
 		}

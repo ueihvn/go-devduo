@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"strconv"
-
-	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 type Response struct {
@@ -18,9 +17,9 @@ type IdResponse struct {
 	Id uint64
 }
 
-func parseID(idJSON string) (uint64, error) {
+func parseID(strID string) (uint64, error) {
 
-	id, err := strconv.ParseUint(idJSON, 10, 8)
+	id, err := strconv.ParseUint(strID, 10, 8)
 	if err != nil {
 		return 0, err
 	}
@@ -38,19 +37,17 @@ func FromJSON(i interface{}, r io.Reader) error {
 	return decoder.Decode(i)
 }
 
-func HashPassword(pass string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pass), 8)
-	if err != nil {
-		return "", err
-	}
-	return string(hashedPassword), nil
+func fromStrIDsToArrUnitIDs(strIDs string) ([]uint64, error) {
+	var res []uint64
+	sIDs := strings.Split(strings.Trim(strIDs, ","), ",")
+	for _, strID := range sIDs {
+		id, err := parseID(strID)
 
-}
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, id)
 
-func ComparePassword(hashedPassword, password string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	if err != nil {
-		return err
 	}
-	return nil
+	return res, nil
 }

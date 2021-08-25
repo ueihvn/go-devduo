@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 type User struct {
 	ID                  uint64               `gorm:"primary_key;auto_increment" json:"id,omitempty"`
@@ -19,4 +23,22 @@ type UserRepository interface {
 	GetUserByEmail(string) (*User, error)
 	GetAllUsers() ([]User, error)
 	UpdateUser(*User) error
+	InitData() error
+}
+
+func (user *User) HashPassword() (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
+
+}
+
+func (user *User) ComparePassword(password string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return err
+	}
+	return nil
 }

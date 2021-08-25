@@ -58,3 +58,27 @@ func (bps *BookingPlanServiceDb) CountUserBookPlanServiceByUserID(userID uint64)
 	}
 	return uint64(count), nil
 }
+
+func (bps *BookingPlanServiceDb) InitData() error {
+
+	bpss := []model.BookingPlanService{
+		{UserID: 4, PlanServiceID: 1}, {UserID: 3, PlanServiceID: 1},
+		{UserID: 4, PlanServiceID: 2}, {UserID: 3, PlanServiceID: 2},
+		{UserID: 4, PlanServiceID: 3}, {UserID: 3, PlanServiceID: 3},
+		{UserID: 4, PlanServiceID: 5}, {UserID: 3, PlanServiceID: 5},
+		{UserID: 4, PlanServiceID: 6}, {UserID: 3, PlanServiceID: 6},
+		{UserID: 4, PlanServiceID: 7}, {UserID: 3, PlanServiceID: 7},
+		{UserID: 5, PlanServiceID: 1}, {UserID: 5, PlanServiceID: 2},
+		{UserID: 5, PlanServiceID: 3}, {UserID: 5, PlanServiceID: 5},
+		{UserID: 5, PlanServiceID: 6}, {UserID: 5, PlanServiceID: 7},
+	}
+
+	for _, bp := range bpss {
+		err := bps.Create(&bp)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}

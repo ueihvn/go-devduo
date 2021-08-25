@@ -44,27 +44,31 @@ func (profileDb *ProfileDb) Get(userId uint64) (*model.Profile, error) {
 		return nil, err
 	}
 
-	var techs []model.Technology
-	err = profileDb.Db.Table("technologies").
-		Select("technologies.name,technologies.id").
-		Joins("left join profile_technologies on technologies.id = profile_technologies.technology_id").
-		Where("profile_technologies.profile_user_id = ?", userId).Find(&techs).Error
+	err = profileDb.fillTechsFieldsProfile(&profile)
 	if err != nil {
 		return nil, err
 	}
 
-	var fields []model.Field
+	return &profile, nil
+}
+
+func (profileDb *ProfileDb) fillTechsFieldsProfile(profile *model.Profile) error {
+	err := profileDb.Db.Table("technologies").
+		Select("technologies.name,technologies.id").
+		Joins("left join profile_technologies on technologies.id = profile_technologies.technology_id").
+		Where("profile_technologies.profile_user_id = ?", profile.UserID).Find(&profile.Technologies).Error
+	if err != nil {
+		return err
+	}
+
 	err = profileDb.Db.Table("fields").
 		Select("fields.name,fields.id").
 		Joins("left join profile_fields on fields.id = profile_fields.field_id").
-		Where("profile_fields.profile_user_id = ?", userId).Find(&fields).Error
+		Where("profile_fields.profile_user_id = ?", profile.UserID).Find(&profile.Fields).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
-	profile.Technologies = techs
-	profile.Fields = fields
-
-	return &profile, nil
+	return nil
 }
 
 func (profileDb *ProfileDb) Update(profile *model.Profile) error {
@@ -96,14 +100,20 @@ func (profileDb *ProfileDb) GetFromOffsetToLimitOfProfile(offset, limit int) ([]
 		if err != nil {
 			return nil, err
 		}
-		return profiles, nil
+	} else {
+		err := profileDb.Db.Limit(limit).Offset(offset).Find(&profiles).Error
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	err := profileDb.Db.Limit(limit).Offset(offset).Find(&profiles).Error
-	if err != nil {
-		return nil, err
-	}
+	for i := range profiles {
+		err := profileDb.fillTechsFieldsProfile(&profiles[i])
+		if err != nil {
+			return nil, err
+		}
 
+	}
 	return profiles, nil
 
 }
@@ -117,6 +127,222 @@ func (profileDb *ProfileDb) GetWithLimitLastID(limit int, last_id uint64) ([]mod
 		return nil, err
 	}
 
+	for i := range profiles {
+		err := profileDb.fillTechsFieldsProfile(&profiles[i])
+		if err != nil {
+			return nil, err
+		}
+
+	}
 	return profiles, nil
 
+}
+
+func (profileDb *ProfileDb) FilterProfileByFields(fields []uint64) ([]model.Profile, error) {
+	var profiles []model.Profile
+
+	err := profileDb.Db.Raw(filterProfileByField, fields).Scan(&profiles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range profiles {
+		err := profileDb.fillTechsFieldsProfile(&profiles[i])
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return profiles, nil
+}
+
+func (profileDb *ProfileDb) FilterProfileByTechs(techs []uint64) ([]model.Profile, error) {
+	var profiles []model.Profile
+
+	err := profileDb.Db.Raw(filterProfileByTech, techs).Scan(&profiles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range profiles {
+		err := profileDb.fillTechsFieldsProfile(&profiles[i])
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return profiles, nil
+}
+
+func (profileDb *ProfileDb) FilterProfileByFieldsTechs(fields, techs []uint64) ([]model.Profile, error) {
+	var profiles []model.Profile
+
+	err := profileDb.Db.Raw(filterProfileByFieldTech, fields, techs).Scan(&profiles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range profiles {
+		err := profileDb.fillTechsFieldsProfile(&profiles[i])
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	return profiles, nil
+}
+
+func (profileDb *ProfileDb) InitData() error {
+	profiles := []model.ProfileJSON{
+		{
+			UserID:   1,
+			FullName: "full name user1",
+			Technologies: []model.Technology{
+				{
+					ID:   1,
+					Name: "C",
+				},
+				{
+					ID:   2,
+					Name: "C++",
+				},
+			},
+			Fields: []model.Field{
+				{
+					ID:   3,
+					Name: "Blockchain",
+				},
+				{
+					ID:   4,
+					Name: "IoT",
+				},
+			},
+			Contact:     map[string]string{},
+			Description: "test description ne ong oi",
+		},
+		{
+			UserID:   2,
+			FullName: "full name user2",
+			Technologies: []model.Technology{
+				{
+					ID:   1,
+					Name: "C",
+				},
+				{
+					ID:   2,
+					Name: "C++",
+				},
+				{
+					ID:   3,
+					Name: "C#",
+				},
+				{
+					ID:   4,
+					Name: "Java",
+				},
+				{
+					ID:   5,
+					Name: "PHP",
+				},
+				{
+					ID:   6,
+					Name: "Ruby",
+				},
+			},
+			Fields: []model.Field{
+				{
+					ID:   3,
+					Name: "Blockchain",
+				},
+				{
+					ID:   4,
+					Name: "IoT",
+				},
+				{
+					ID:   8,
+					Name: "E-commerce",
+				},
+				{
+					ID:   12,
+					Name: "Web App",
+				},
+			},
+			Contact:     map[string]string{},
+			Description: "test description ne ong oi",
+		},
+		{
+			UserID:   3,
+			FullName: "full name user3",
+			Technologies: []model.Technology{
+				{
+					ID:   10,
+					Name: "HTML",
+				},
+				{
+					ID:   12,
+					Name: "ReactJS",
+				},
+				{
+					ID:   1,
+					Name: "C",
+				},
+				{
+					ID:   2,
+					Name: "C++",
+				},
+				{
+					ID:   3,
+					Name: "C#",
+				},
+				{
+					ID:   4,
+					Name: "Java",
+				},
+				{
+					ID:   5,
+					Name: "PHP",
+				},
+				{
+					ID:   6,
+					Name: "Ruby",
+				},
+			},
+			Fields: []model.Field{
+				{
+					ID:   3,
+					Name: "Blockchain",
+				},
+				{
+					ID:   4,
+					Name: "IoT",
+				},
+				{
+					ID:   8,
+					Name: "E-commerce",
+				},
+				{
+					ID:   12,
+					Name: "Web App",
+				},
+			},
+			Contact:     map[string]string{},
+			Description: "test description ne ong oi",
+		},
+	}
+
+	for _, profileJSON := range profiles {
+		profile, err := profileJSON.ToProfile()
+		if err != nil {
+			return err
+		}
+		err = profileDb.Create(profile)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
 }

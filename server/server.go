@@ -22,6 +22,11 @@ func NewServer() (*Server, error) {
 		return nil, err
 	}
 
+	// err = repositories.InitData()
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	return &Server{
 		Router:                    mux.NewRouter(),
 		profileHandler:            handler.NewProfileHandler(repositories.Pr, repositories.Tr, repositories.Fr),
@@ -66,7 +71,11 @@ func (server *Server) Route() {
 	// subRouter.Use(server.authHandler.AuthenticateMiddleware)
 
 	// mentor
+	subRouter.PathPrefix("/mentors").Queries("o", "{o:[0-9]+}", "l", "{l:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimitOffset).Methods("GET")
+	subRouter.PathPrefix("/mentors").Queries("l", "{l:[0-9]+}", "cursor", "{cursor:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimitCursor).Methods("GET")
 	subRouter.PathPrefix("/mentors").Queries("l", "{l:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimit).Methods("GET")
-	subRouter.PathPrefix("/mentors").Queries("l", "{l:[0-9]+}", "last_id", "{last_id:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimitLastID).Methods("GET")
-	subRouter.PathPrefix("/mentors").Queries("o", "{o:[0-9]+}", "l", "{l:[0-9]+}").HandlerFunc(server.mentorHandler.Get).Methods("GET")
+
+	subRouter.PathPrefix("/mentors").Queries("tech", "{tech:[0-9,]+}", "field", "{field:[0-9,]+}").HandlerFunc(server.mentorHandler.FilterMentorsByFieldsTechs).Methods("GET")
+	subRouter.PathPrefix("/mentors").Queries("tech", "{tech:[0-9,]+}").HandlerFunc(server.mentorHandler.FilterMentorsByTechs).Methods("GET")
+	subRouter.PathPrefix("/mentors").Queries("field", "{field:[0-9,]+}").HandlerFunc(server.mentorHandler.FilterMentorsByFields).Methods("GET")
 }

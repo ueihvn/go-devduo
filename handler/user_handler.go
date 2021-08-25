@@ -139,7 +139,7 @@ func (u *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	// + validate user
 
 	// + hash password
-	hashedPassword, err := HashPassword(user.Password)
+	hashedPassword, err := user.HashPassword()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		ToJSON(Response{Status: false, Message: "err hash password"}, w)
@@ -191,7 +191,7 @@ func (u *UserHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// check hash
-	err = ComparePassword(userData.Password, user.Password)
+	err = userData.ComparePassword(user.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		ToJSON(Response{Status: false, Message: "wrong password with email"}, w)

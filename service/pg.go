@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewDb(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) {
+func NewConn(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) {
 	dburl := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
 		DbHost,
 		DbUser,
@@ -29,7 +29,7 @@ func NewDb(DbUser, DbPassword, DbPort, DbHost, DbName string) (*gorm.DB, error) 
 
 func ConnectDb() (*gorm.DB, error) {
 	dbConfig := config.NewConfig()
-	db, err := NewDb(
+	db, err := NewConn(
 		dbConfig.PostgresUser,
 		dbConfig.PostgresPassword,
 		dbConfig.PostgrePort,

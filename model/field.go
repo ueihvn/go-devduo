@@ -6,6 +6,7 @@ type Field struct {
 }
 
 type FieldRepository interface {
+	InitData() error
 	Create(*Field) error
 	Get(string) (*Field, error)
 	GetAll() ([]Field, error)

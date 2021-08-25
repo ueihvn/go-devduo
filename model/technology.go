@@ -6,6 +6,7 @@ type Technology struct {
 }
 
 type TechnologyRepository interface {
+	InitData() error
 	Create(*Technology) error
 	Get(string) (*Technology, error)
 	GetAll() ([]Technology, error)

@@ -12,6 +12,7 @@ type BookingPlanService struct {
 }
 
 type BookingPlanServiceRepository interface {
+	InitData() error
 	Create(*BookingPlanService) error
 	Get(uint64) (*BookingPlanService, error)
 	Update(*BookingPlanService) error

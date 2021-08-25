@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/shopspring/decimal"
@@ -72,8 +71,66 @@ func (ps *PlanServiceDb) GetSmallestPricePlanServiceByUserID(userID uint64) (*de
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%+v\n", result)
-
 	// res, _ := decimal.NewFromString(result.min)
 	return &result.Min, nil
+}
+
+func (ps *PlanServiceDb) InitData() error {
+
+	planServices := []model.PlanService{
+		{
+			UserID: 1,
+			Title:  "Debug 1 hour",
+			Price:  model.PriceStringToDecimal("10000"),
+		},
+		{
+			UserID: 1,
+			Title:  "Project support",
+			Price:  model.PriceStringToDecimal("2000000"),
+		},
+		{
+			UserID: 1,
+			Title:  "Design project",
+			Price:  model.PriceStringToDecimal("300000"),
+		},
+		{
+			UserID: 2,
+			Title:  "Debug 3 hour",
+			Price:  model.PriceStringToDecimal("30000"),
+		},
+		{
+			UserID: 2,
+			Title:  "Project support",
+			Price:  model.PriceStringToDecimal("2000000"),
+		},
+		{
+			UserID: 2,
+			Title:  "Design project",
+			Price:  model.PriceStringToDecimal("100000"),
+		},
+		{
+			UserID: 3,
+			Title:  "Debug 2 hour",
+			Price:  model.PriceStringToDecimal("30000"),
+		},
+		{
+			UserID: 3,
+			Title:  "Project support",
+			Price:  model.PriceStringToDecimal("2000000"),
+		},
+		{
+			UserID: 3,
+			Title:  "Design project",
+			Price:  model.PriceStringToDecimal("100000"),
+		},
+	}
+
+	for _, planService := range planServices {
+		err := ps.Create(&planService)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
 }

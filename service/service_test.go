@@ -148,29 +148,13 @@ func TestGetProfile(t *testing.T) {
 		t.Error("error connect db")
 	}
 	profileDb := NewProfileDb(db)
-	userID := uint64(4)
-
-	// getfields
-	fieldDb := NewFieldRepository(db)
-	fields, err := fieldDb.GetFieldsByUserId(userID)
-	if err != nil {
-		t.Errorf("err profileDb.GetFieldsByUserId - err: %s", err)
-	}
-
-	// gettechs
-	techDb := NewTechnologyRepository(db)
-	techs, err := techDb.GetTechnologiesByUserId(userID)
-	if err != nil {
-		t.Errorf("err technologyDb.GetTechnologiesByUserId - err: %s", err)
-	}
+	userID := uint64(1)
 
 	profile, err := profileDb.Get(userID)
 	if err != nil {
 		t.Errorf("error profileDb.Get- err: %s", err)
 	}
 
-	profile.Fields = fields
-	profile.Technologies = techs
 	fmt.Printf("%+v\n", profile)
 }
 
@@ -227,6 +211,23 @@ func TestGetProfileOL(t *testing.T) {
 	profileDb := NewProfileDb(db)
 
 	profiles, err := profileDb.GetFromOffsetToLimitOfProfile(0, 50)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(profiles)
+
+}
+
+func TestFilterProfileByField(t *testing.T) {
+
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+	profileDb := NewProfileDb(db)
+
+	fields := []uint64{3, 4}
+	profiles, err := profileDb.FilterProfileByFields(fields)
 	if err != nil {
 		t.Error(err)
 	}
