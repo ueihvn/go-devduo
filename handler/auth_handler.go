@@ -37,6 +37,25 @@ func (ah *AuthHandler) AuthenticateMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func (ah *AuthHandler) UserAuthorizeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var user model.User
+		err := FromJSON(&user, r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			return
+		}
+		session, _ := ah.Store.Get(r, "session.id")
+		if session.Values["user_id"] != user.ID {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "Unauthorized,can not update other user"}, w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (ah *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
@@ -103,6 +122,7 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 		ToJSON(Response{Status: false, Message: err.Error()}, w)
 		return
 	}
+
 	// check hash
 	err = userData.ComparePassword(user.Password)
 	if err != nil {
@@ -120,6 +140,7 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	session.Values["authenticated"] = true
 	session.Values["user_id"] = userData.ID
 	session.Options.MaxAge = 60
+	session.Options.HttpOnly = true
 	err = session.Save(r, w)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -132,11 +153,10 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	ToJSON(Response{Status: true, Message: "successfully authorization user", Data: userData}, w)
 }
 
-func (ah *AuthHandler) CheckAuth(w http.ResponseWriter, r *http.Request) {
+func (ah *AuthHandler) CheckAuthenticate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	session, _ := ah.Store.Get(r, "session.id")
 	if session.Values["authenticated"] != nil && session.Values["authenticated"] != false {
-		fmt.Println(session)
 		w.Write([]byte(time.Now().String()))
 	} else {
 		w.Header().Set("Content-type", "application/json")

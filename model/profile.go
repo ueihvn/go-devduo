@@ -27,6 +27,12 @@ type ProfileJSON struct {
 	Description  string            `json:"description,omitempty"`
 }
 
+type FilterSortPage struct {
+	Filter map[string]string
+	Sort   map[string]string
+	Page   uint64
+}
+
 type ProfileRepository interface {
 	InitData() error
 	Create(*Profile) error
@@ -37,6 +43,7 @@ type ProfileRepository interface {
 	FilterProfileByFields([]uint64) ([]Profile, error)
 	FilterProfileByTechs([]uint64) ([]Profile, error)
 	FilterProfileByFieldsTechs([]uint64, []uint64) ([]Profile, error)
+	GetMentorWithFilterSortPage(*FilterSortPage) ([]Profile, *uint64, error)
 	// Delete(*Profile) error
 }
 

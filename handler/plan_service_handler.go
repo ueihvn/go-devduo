@@ -114,3 +114,25 @@ func (psH *PlanServiceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseJSON)
 }
+
+func (psH *PlanServiceHandler) GetByUserID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-type", "application/json")
+	userID, err := parseID(r.URL.Query().Get("user_id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		ToJSON(Response{Status: false, Message: err.Error()}, w)
+	}
+
+	planServices, err := psH.psr.GetPlanServiceByUserID(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		ToJSON(Response{Status: false, Message: err.Error()}, w)
+	}
+
+	ToJSON(Response{
+		Status:  true,
+		Message: "get planservice by userID",
+		Data:    planServices,
+	}, w)
+
+}

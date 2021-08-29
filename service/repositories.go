@@ -19,10 +19,10 @@ func NewRepositories() (*Repositories, error) {
 		return nil, err
 	}
 
-	// err = MigrateDb(db)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	err = MigrateDb(db)
+	if err != nil {
+		return nil, err
+	}
 
 	repo := &Repositories{
 		Ur:   NewUserRepository(db),

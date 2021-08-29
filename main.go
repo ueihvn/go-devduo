@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -10,8 +11,11 @@ import (
 func main() {
 	s, err := server.NewServer()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("err new server: %v\n", err)
 	}
+
 	s.Route()
-	log.Fatal(http.ListenAndServe("127.0.0.1:8000", s.Router))
+
+	fmt.Println("Server run at localhost:8000")
+	log.Fatal(http.ListenAndServe(":8000", s.Router))
 }

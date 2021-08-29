@@ -1,6 +1,9 @@
 package server
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/ueihvn/go-devduo/handler"
 	"github.com/ueihvn/go-devduo/service"
@@ -16,16 +19,20 @@ type Server struct {
 	mentorHandler             *handler.MentorHandler
 }
 
+func checkOk(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "ok")
+}
+
 func NewServer() (*Server, error) {
 	repositories, err := service.NewRepositories()
 	if err != nil {
 		return nil, err
 	}
 
-	// err = repositories.InitData()
-	// if err != nil {
-	// 	return nil, err
-	// }
+	err = repositories.InitData()
+	if err != nil {
+		return nil, err
+	}
 
 	return &Server{
 		Router:                    mux.NewRouter(),
@@ -42,40 +49,43 @@ func (server *Server) Route() {
 	//auth
 	server.Router.HandleFunc("/signup", server.authHandler.SignUp).Methods("POST")
 	server.Router.HandleFunc("/login", server.authHandler.LogIn).Methods("POST")
-	server.Router.HandleFunc("/checkauth", server.authHandler.CheckAuth).Methods("GET")
+	server.Router.HandleFunc("/checkauth", server.authHandler.CheckAuthenticate).Methods("GET")
+	server.Router.HandleFunc("/ok", checkOk).Methods("GET")
 
 	// + subrouter for api
 	subRouter := server.Router.PathPrefix("/api/v1").Subrouter()
 	//user
 	subRouter.HandleFunc("/user", server.userHandler.Create).Methods("POST")
 	subRouter.HandleFunc("/user/{id:[0-9]+}", server.userHandler.Get).Methods("GET")
+	// add authorization
 	subRouter.HandleFunc("/user", server.userHandler.Update).Methods("PUT")
 
 	//profile
-	subRouter.HandleFunc("/profile/{id:[0-9]+}", server.profileHandler.Get).Methods("GET")
+	// add authorization
 	subRouter.HandleFunc("/profile", server.profileHandler.Create).Methods("POST")
 	subRouter.HandleFunc("/profile", server.profileHandler.Update).Methods("PUT")
 
+	subRouter.HandleFunc("/profile/{id:[0-9]+}", server.profileHandler.Get).Methods("GET")
+
 	//planservice
+	// add authorization
 	subRouter.HandleFunc("/planservice", server.planServiceHandler.Create).Methods("POST")
-	subRouter.HandleFunc("/planservice/{id:[0-9]+}", server.planServiceHandler.Get).Methods("GET")
 	subRouter.HandleFunc("/planservice", server.planServiceHandler.Update).Methods("PUT")
-	// +planservice by userid
+
+	subRouter.HandleFunc("/planservice/{id:[0-9]+}", server.planServiceHandler.Get).Methods("GET")
+	subRouter.HandleFunc("/planservice/{user_id:[0-9]+}", server.planServiceHandler.GetByUserID).Methods("GET")
 
 	//bookingplanservice
+	// add authorization
 	subRouter.HandleFunc("/bookingplanservice", server.bookingPlanServiceHandler.Create).Methods("POST")
-	subRouter.HandleFunc("/bookingplanservice/{id:[0-9]+}", server.bookingPlanServiceHandler.Get).Methods("GET")
 	subRouter.HandleFunc("/bookingplanservice", server.bookingPlanServiceHandler.Update).Methods("PUT")
-	// +bookingplanservice by PlanServiceId || mentee
 
-	// subRouter.Use(server.authHandler.AuthenticateMiddleware)
+	subRouter.HandleFunc("/bookingplanservice/{id:[0-9]+}", server.bookingPlanServiceHandler.Get).Methods("GET")
+	// +bookingplanservice by PlanServiceId || menteeid
 
 	// mentor
-	subRouter.PathPrefix("/mentors").Queries("o", "{o:[0-9]+}", "l", "{l:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimitOffset).Methods("GET")
-	subRouter.PathPrefix("/mentors").Queries("l", "{l:[0-9]+}", "cursor", "{cursor:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimitCursor).Methods("GET")
-	subRouter.PathPrefix("/mentors").Queries("l", "{l:[0-9]+}").HandlerFunc(server.mentorHandler.GetWithLimit).Methods("GET")
+	subRouter.PathPrefix("/mentors").HandlerFunc(server.mentorHandler.GetMentors).Methods("GET")
 
-	subRouter.PathPrefix("/mentors").Queries("tech", "{tech:[0-9,]+}", "field", "{field:[0-9,]+}").HandlerFunc(server.mentorHandler.FilterMentorsByFieldsTechs).Methods("GET")
-	subRouter.PathPrefix("/mentors").Queries("tech", "{tech:[0-9,]+}").HandlerFunc(server.mentorHandler.FilterMentorsByTechs).Methods("GET")
-	subRouter.PathPrefix("/mentors").Queries("field", "{field:[0-9,]+}").HandlerFunc(server.mentorHandler.FilterMentorsByFields).Methods("GET")
+	subRouter.Use(server.authHandler.AuthenticateMiddleware)
+
 }

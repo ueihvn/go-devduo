@@ -73,7 +73,8 @@ func (mh *MentorHandler) GetWithLimitOffset(w http.ResponseWriter, r *http.Reque
 	for _, profile := range profiles {
 		mentor, err := mh.getMentor(&profile)
 		if err != nil {
-
+			w.WriteHeader(http.StatusInternalServerError)
+			ToJSON(Response{Status: false, Message: err.Error()}, w)
 		}
 
 		mentors = append(mentors, *mentor)
@@ -109,7 +110,8 @@ func (mh *MentorHandler) GetWithLimit(w http.ResponseWriter, r *http.Request) {
 	for _, profile := range profiles {
 		mentor, err := mh.getMentor(&profile)
 		if err != nil {
-
+			w.WriteHeader(http.StatusInternalServerError)
+			ToJSON(Response{Status: false, Message: err.Error()}, w)
 		}
 
 		mentors = append(mentors, *mentor)
@@ -157,129 +159,42 @@ func (mh *MentorHandler) GetWithLimitCursor(w http.ResponseWriter, r *http.Reque
 
 }
 
-func (mh *MentorHandler) FilterMentorsByFields(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-
-	test := r.URL.Query()
-	fields, err := fromStrIDsToArrUnitIDs(test["field"][0])
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "faild to parse field_id. Chech request"}, w)
-	}
-
-	profiles, err := mh.pr.FilterProfileByFields(fields)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ToJSON(Response{Status: false, Message: err.Error()}, w)
-	}
-
-	var mentors []Mentor
-
-	for _, profile := range profiles {
-		mentor, err := mh.getMentor(&profile)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			ToJSON(Response{Status: false, Message: err.Error()}, w)
-		}
-
-		mentors = append(mentors, *mentor)
-	}
-
-	ToJSON(Response{
-		Status:  true,
-		Message: "mentor with field",
-		Data:    mentors,
-	}, w)
-
-}
-
-func (mh *MentorHandler) FilterMentorsByTechs(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-
-	tech, err := fromStrIDsToArrUnitIDs(r.URL.Query().Get("tech"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "faild to parse tech_id. Chech request"}, w)
-	}
-
-	profiles, err := mh.pr.FilterProfileByTechs(tech)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ToJSON(Response{Status: false, Message: err.Error()}, w)
-	}
-
-	var mentors []Mentor
-
-	for _, profile := range profiles {
-		mentor, err := mh.getMentor(&profile)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			ToJSON(Response{Status: false, Message: err.Error()}, w)
-		}
-
-		mentors = append(mentors, *mentor)
-	}
-
-	ToJSON(Response{
-		Status:  true,
-		Message: "mentor with tech",
-		Data:    mentors,
-	}, w)
-
-}
-
-func (mh *MentorHandler) FilterMentorsByFieldsTechs(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-
-	test := r.URL.Query()
-	fields, err := fromStrIDsToArrUnitIDs(test["field"][0])
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "faild to parse field_id. Chech request"}, w)
-	}
-
-	techs, err := fromStrIDsToArrUnitIDs(test["tech"][0])
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "faild to parse tech_id. Chech request"}, w)
-	}
-
-	profiles, err := mh.pr.FilterProfileByFieldsTechs(fields, techs)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ToJSON(Response{Status: false, Message: err.Error()}, w)
-	}
-
-	var mentors []Mentor
-
-	for _, profile := range profiles {
-		mentor, err := mh.getMentor(&profile)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			ToJSON(Response{Status: false, Message: err.Error()}, w)
-		}
-
-		mentors = append(mentors, *mentor)
-	}
-
-	ToJSON(Response{
-		Status:  true,
-		Message: "mentor with field&tech",
-		Data:    mentors,
-	}, w)
-
-}
-
 func (mh *MentorHandler) GetMentors(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
-	strTechs := r.URL.Query().Get("tech")
-	if strTechs != "" {
-		fmt.Println(strTechs)
+	fsp, err := extractDataFromURL(r.URL.Query())
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		ToJSON(Response{Status: false, Message: err.Error()}, w)
 	}
-	strFields := r.URL.Query().Get("field")
-	if strFields != "" {
-		fmt.Println(strFields)
+
+	fmt.Printf("%+v\n", fsp)
+	profiles, rows, err := mh.pr.GetMentorWithFilterSortPage(fsp)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		ToJSON(Response{Status: false, Message: err.Error()}, w)
 	}
+
+	var mentors []Mentor
+
+	for _, profile := range profiles {
+		mentor, err := mh.getMentor(&profile)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			ToJSON(Response{Status: false, Message: err.Error()}, w)
+		}
+
+		mentors = append(mentors, *mentor)
+	}
+
+	ToJSON(Response{
+		Status:  true,
+		Message: "get mentors succesfully",
+		Data: PageData{
+			Content:       mentors,
+			Page:          fsp.Page,
+			ContentLength: *rows,
+		},
+	}, w)
 
 }

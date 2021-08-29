@@ -1,5 +1,9 @@
 package service
 
+var getProfile = `
+select * from profiles
+`
+
 var filterProfileByField = `
 select * from profiles 
 where not exists (
