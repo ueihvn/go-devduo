@@ -17,6 +17,8 @@ type Server struct {
 	bookingPlanServiceHandler *handler.BookingPlanServiceHandler
 	authHandler               *handler.AuthHandler
 	mentorHandler             *handler.MentorHandler
+	technologyHandler         *handler.TechnologyHandler
+	fieldHandler              *handler.FieldHandler
 }
 
 func checkOk(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +44,8 @@ func NewServer() (*Server, error) {
 		bookingPlanServiceHandler: handler.NewBookingPlanServiceHandler(repositories.Bpsr),
 		authHandler:               handler.NewAuthHandler(repositories.Ur),
 		mentorHandler:             handler.NewMentorHandler(repositories.Bpsr, repositories.Psr, repositories.Pr),
+		technologyHandler:         handler.NewTechnologyHandler(repositories.Tr),
+		fieldHandler:              handler.NewFieldHandler(repositories.Fr),
 	}, nil
 }
 
@@ -52,40 +56,41 @@ func (server *Server) Route() {
 	server.Router.HandleFunc("/checkauth", server.authHandler.CheckAuthenticate).Methods("GET")
 	server.Router.HandleFunc("/ok", checkOk).Methods("GET")
 
-	// + subrouter for api
-	subRouter := server.Router.PathPrefix("/api/v1").Subrouter()
-	//user
-	subRouter.HandleFunc("/user", server.userHandler.Create).Methods("POST")
-	subRouter.HandleFunc("/user/{id:[0-9]+}", server.userHandler.Get).Methods("GET")
-	// add authorization
-	subRouter.HandleFunc("/user", server.userHandler.Update).Methods("PUT")
+	userRouter := server.Router.PathPrefix("/api/v1/user").Subrouter()
+	userRouter.HandleFunc("", server.userHandler.Create).Methods("POST")
+	userRouter.HandleFunc("", server.userHandler.Update).Methods("PUT")
+	userRouter.HandleFunc("/{id:[0-9]+}", server.userHandler.Get).Methods("GET")
+	userRouter.Use(server.authHandler.AuthenticateMiddleware, server.authHandler.UserAuthorizeMiddleware)
 
-	//profile
-	// add authorization
-	subRouter.HandleFunc("/profile", server.profileHandler.Create).Methods("POST")
-	subRouter.HandleFunc("/profile", server.profileHandler.Update).Methods("PUT")
+	profileRouter := server.Router.PathPrefix("/api/v1/profile").Subrouter()
+	profileRouter.HandleFunc("", server.profileHandler.Create).Methods("POST")
+	profileRouter.HandleFunc("", server.profileHandler.Update).Methods("PUT")
+	profileRouter.HandleFunc("/{id:[0-9]+}", server.profileHandler.Create).Methods("GET")
+	profileRouter.Use(server.authHandler.AuthenticateMiddleware, server.authHandler.ProfileAuthorizeMiddleware)
 
-	subRouter.HandleFunc("/profile/{id:[0-9]+}", server.profileHandler.Get).Methods("GET")
+	planServiceRouter := server.Router.PathPrefix("/api/v1/planservice").Subrouter()
+	planServiceRouter.HandleFunc("", server.planServiceHandler.Create).Methods("POST")
+	planServiceRouter.HandleFunc("", server.planServiceHandler.Update).Methods("PUT")
+	planServiceRouter.HandleFunc("/{id:[0-9]+}", server.planServiceHandler.Get).Methods("GET")
+	planServiceRouter.PathPrefix("").Queries("user_id", "{user_id:[0-9]+}").HandlerFunc(server.planServiceHandler.GetByUserID).Methods("GET")
+	profileRouter.Use(server.authHandler.AuthenticateMiddleware, server.authHandler.PlanServiceAuthorizeMiddleware)
 
-	//planservice
-	// add authorization
-	subRouter.HandleFunc("/planservice", server.planServiceHandler.Create).Methods("POST")
-	subRouter.HandleFunc("/planservice", server.planServiceHandler.Update).Methods("PUT")
+	bookingPlanServiceRouter := server.Router.PathPrefix("/api/v1/bookingplanservice").Subrouter()
+	bookingPlanServiceRouter.HandleFunc("", server.bookingPlanServiceHandler.Create).Methods("POST")
+	bookingPlanServiceRouter.HandleFunc("", server.bookingPlanServiceHandler.Update).Methods("PUT")
+	bookingPlanServiceRouter.HandleFunc("/{id:[0-9]+}", server.bookingPlanServiceHandler.Get).Methods("GET")
+	bookingPlanServiceRouter.Use(server.authHandler.AuthenticateMiddleware, server.authHandler.BookingPlanServiceAuthorizeMiddleware)
 
-	subRouter.HandleFunc("/planservice/{id:[0-9]+}", server.planServiceHandler.Get).Methods("GET")
-	subRouter.HandleFunc("/planservice/{user_id:[0-9]+}", server.planServiceHandler.GetByUserID).Methods("GET")
+	technologyRouter := server.Router.PathPrefix("/api/v1/technology").Subrouter()
+	technologyRouter.HandleFunc("", server.technologyHandler.GetAll).Methods("GET")
+	technologyRouter.Use(server.authHandler.AuthenticateMiddleware)
 
-	//bookingplanservice
-	// add authorization
-	subRouter.HandleFunc("/bookingplanservice", server.bookingPlanServiceHandler.Create).Methods("POST")
-	subRouter.HandleFunc("/bookingplanservice", server.bookingPlanServiceHandler.Update).Methods("PUT")
+	fieldRouter := server.Router.PathPrefix("/api/v1/field").Subrouter()
+	fieldRouter.HandleFunc("", server.fieldHandler.GetAll).Methods("GET")
+	fieldRouter.Use(server.authHandler.AuthenticateMiddleware)
 
-	subRouter.HandleFunc("/bookingplanservice/{id:[0-9]+}", server.bookingPlanServiceHandler.Get).Methods("GET")
-	// +bookingplanservice by PlanServiceId || menteeid
-
-	// mentor
-	subRouter.PathPrefix("/mentors").HandlerFunc(server.mentorHandler.GetMentors).Methods("GET")
-
-	subRouter.Use(server.authHandler.AuthenticateMiddleware)
+	mentorRouter := server.Router.PathPrefix("/api/v1/mentors").Subrouter()
+	mentorRouter.HandleFunc("", server.mentorHandler.GetMentors).Methods("GET")
+	mentorRouter.Use(server.authHandler.AuthenticateMiddleware)
 
 }

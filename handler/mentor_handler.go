@@ -168,7 +168,6 @@ func (mh *MentorHandler) GetMentors(w http.ResponseWriter, r *http.Request) {
 		ToJSON(Response{Status: false, Message: err.Error()}, w)
 	}
 
-	fmt.Printf("%+v\n", fsp)
 	profiles, rows, err := mh.pr.GetMentorWithFilterSortPage(fsp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

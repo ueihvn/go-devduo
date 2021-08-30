@@ -37,7 +37,7 @@ func (bpsH *BookingPlanServiceHandler) Create(w http.ResponseWriter, r *http.Req
 	err = bpsH.bpsr.Create(&bps)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}

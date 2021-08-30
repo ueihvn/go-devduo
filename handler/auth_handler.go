@@ -39,6 +39,10 @@ func (ah *AuthHandler) AuthenticateMiddleware(next http.Handler) http.Handler {
 
 func (ah *AuthHandler) UserAuthorizeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Methods") != "PUT" {
+			next.ServeHTTP(w, r)
+		}
+
 		var user model.User
 		err := FromJSON(&user, r.Body)
 		if err != nil {
@@ -50,6 +54,75 @@ func (ah *AuthHandler) UserAuthorizeMiddleware(next http.Handler) http.Handler {
 		if session.Values["user_id"] != user.ID {
 			w.WriteHeader(http.StatusBadRequest)
 			ToJSON(Response{Status: false, Message: "Unauthorized,can not update other user"}, w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (ah *AuthHandler) ProfileAuthorizeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
+			next.ServeHTTP(w, r)
+		}
+
+		var profile model.ProfileJSON
+		err := FromJSON(&profile, r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			return
+		}
+		session, _ := ah.Store.Get(r, "session.id")
+		if session.Values["user_id"] != profile.UserID {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "Unauthorized,can not create or update other profile"}, w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (ah *AuthHandler) PlanServiceAuthorizeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
+			next.ServeHTTP(w, r)
+		}
+
+		var ps model.PlanService
+		err := FromJSON(&ps, r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			return
+		}
+		session, _ := ah.Store.Get(r, "session.id")
+		if session.Values["user_id"] != ps.UserID {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "Unauthorized,can not create or update other user PlanService"}, w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (ah *AuthHandler) BookingPlanServiceAuthorizeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
+			next.ServeHTTP(w, r)
+		}
+
+		var bps model.BookingPlanService
+		err := FromJSON(&bps, r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			return
+		}
+		session, _ := ah.Store.Get(r, "session.id")
+		if session.Values["user_id"] != bps.UserID {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "Unauthorized,can not create or update other user booking plan service"}, w)
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -139,7 +212,7 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 
 	session.Values["authenticated"] = true
 	session.Values["user_id"] = userData.ID
-	session.Options.MaxAge = 60
+	session.Options.MaxAge = 300
 	session.Options.HttpOnly = true
 	err = session.Save(r, w)
 	if err != nil {

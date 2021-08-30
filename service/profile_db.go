@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/ueihvn/go-devduo/model"
@@ -199,7 +198,6 @@ func (profileDb *ProfileDb) FilterProfileByFieldsTechs(fields, techs []uint64) (
 func (profileDb *ProfileDb) GetMentorWithFilterSortPage(fsp *model.FilterSortPage) ([]model.Profile, *uint64, error) {
 
 	query, args := buildProfileFilterSortPageQuery(fsp)
-	fmt.Printf("query: %v\nargs: %+v\n", query, args)
 
 	var profiles []model.Profile
 

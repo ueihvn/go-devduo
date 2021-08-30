@@ -97,8 +97,9 @@ func buildProfileFilterSortPageQuery(fsp *model.FilterSortPage) (string, []inter
 		}
 	}
 
-	sort := "order by"
+	sort := ""
 	if fsp.Sort != nil {
+		sort = "order by"
 		for field, order := range fsp.Sort {
 			sort = fmt.Sprint(sort, " ", field, " ", order, ",")
 		}
@@ -107,7 +108,6 @@ func buildProfileFilterSortPageQuery(fsp *model.FilterSortPage) (string, []inter
 
 	page := ""
 	if fsp.Page != 0 {
-		// page = "offset " + strconv.FormatUint((fsp.Page-1)*resultPerPage, 10) + "limit" + strconv.Itoa(resultPerPage)
 		page = fmt.Sprint("offset ", ((fsp.Page - 1) * resultPerPage), " limit ", resultPerPage)
 	}
 
