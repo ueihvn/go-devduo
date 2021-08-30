@@ -41,6 +41,7 @@ func (ah *AuthHandler) UserAuthorizeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Methods") != "PUT" {
 			next.ServeHTTP(w, r)
+			return
 		}
 
 		var user model.User
@@ -64,6 +65,7 @@ func (ah *AuthHandler) ProfileAuthorizeMiddleware(next http.Handler) http.Handle
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
 			next.ServeHTTP(w, r)
+			return
 		}
 
 		var profile model.ProfileJSON
@@ -87,6 +89,7 @@ func (ah *AuthHandler) PlanServiceAuthorizeMiddleware(next http.Handler) http.Ha
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
 			next.ServeHTTP(w, r)
+			return
 		}
 
 		var ps model.PlanService
@@ -110,6 +113,7 @@ func (ah *AuthHandler) BookingPlanServiceAuthorizeMiddleware(next http.Handler) 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
 			next.ServeHTTP(w, r)
+			return
 		}
 
 		var bps model.BookingPlanService
@@ -228,6 +232,7 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 
 func (ah *AuthHandler) CheckAuthenticate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
+	fmt.Printf("%+v/n", r.Header)
 	session, _ := ah.Store.Get(r, "session.id")
 	if session.Values["authenticated"] != nil && session.Values["authenticated"] != false {
 		w.Write([]byte(time.Now().String()))
