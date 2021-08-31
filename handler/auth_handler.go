@@ -133,6 +133,23 @@ func (ah *AuthHandler) BookingPlanServiceAuthorizeMiddleware(next http.Handler) 
 	})
 }
 
+func (ah *AuthHandler) CheckContentTypeMiddleware(next http.Handler) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if methods := r.Header.Get("Methods"); methods != "PUT" && methods != "POST" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-type"); contentType != "application/json" {
+			w.WriteHeader(http.StatusBadRequest)
+			ToJSON(Response{Status: false, Message: "content-type must be application/json"}, w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (ah *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
@@ -209,14 +226,12 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// return cookie
-	session, err := ah.Store.Get(r, "session.id")
-	if err != nil {
-		fmt.Println(err)
-	}
-
+	session, _ := ah.Store.Get(r, "session.id")
 	session.Values["authenticated"] = true
+	const SESSION_MAXAGE = 300
+
 	session.Values["user_id"] = userData.ID
-	session.Options.MaxAge = 300
+	session.Options.MaxAge = SESSION_MAXAGE
 	session.Options.HttpOnly = true
 	err = session.Save(r, w)
 	if err != nil {
@@ -227,7 +242,28 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	ToJSON(Response{Status: true, Message: "successfully authorization user", Data: userData}, w)
+	ToJSON(Response{Status: true, Message: "successfully authorization user", Data: IdResponse{Id: userData.ID}}, w)
+}
+
+func (ah *AuthHandler) RefreshCookie(w http.ResponseWriter, r *http.Request) {
+	session, _ := ah.Store.Get(r, "session.id")
+	if session.Values["authenticated"] != nil && session.Values["authenticated"] != false {
+		const SESSION_MAXAGE = 300
+		session.Options.MaxAge = SESSION_MAXAGE
+		session.Options.HttpOnly = true
+		err := session.Save(r, w)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			ToJSON(Response{Status: false, Message: err.Error()}, w)
+			fmt.Printf("%+v\n", err)
+			return
+		}
+
+	} else {
+		w.Header().Set("Content-type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		ToJSON(Response{Status: false, Message: "Unauthorized, please login"}, w)
+	}
 }
 
 func (ah *AuthHandler) CheckAuthenticate(w http.ResponseWriter, r *http.Request) {
