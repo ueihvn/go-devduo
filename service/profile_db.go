@@ -71,6 +71,16 @@ func (profileDb *ProfileDb) fillTechsFieldsProfile(profile *model.Profile) error
 	return nil
 }
 
+func (profileDb *ProfileDb) GetTest() (*model.Profile, error) {
+	var profile model.Profile
+	result := profileDb.Db.Preload("Technologies").Preload("Fields").First(&profile, 1)
+	if err := result.Error; err != nil {
+		return nil, err
+	}
+
+	return &profile, nil
+}
+
 func (profileDb *ProfileDb) Update(profile *model.Profile) error {
 	err := profileDb.Db.Model(&profile).Updates(profile).Error
 	if err != nil {

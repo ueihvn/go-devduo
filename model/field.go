@@ -1,8 +1,8 @@
 package model
 
 type Field struct {
-	ID   uint64 `gorm:"primaryKey;auto_increment"`
-	Name string `gorm:"not null;unique"`
+	ID   uint64 `gorm:"primaryKey;auto_increment" json:"id"`
+	Name string `gorm:"not null;unique" json:"name"`
 }
 
 type FieldRepository interface {

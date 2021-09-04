@@ -22,10 +22,15 @@ type IdResponse struct {
 }
 
 type PageData struct {
-	Content       []Mentor
-	Page          uint64
-	ContentLength uint64
+	Content       []Mentor `json:"content,omitempty"`
+	Page          uint64   `json:"page,omitempty"`
+	ContentLength uint64   `json:"content_length"`
 }
+
+var parseJsonError = "err deserialize data. Check request"
+var ParseIDError = "err parse Id. Check request"
+var notFoundError = "err records not found. Check request"
+var serverInternalError = "err server. Please try again later"
 
 func parseID(strID string) (uint64, error) {
 

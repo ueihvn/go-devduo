@@ -95,6 +95,20 @@ func TestGetUserByEmail(t *testing.T) {
 	fmt.Printf("%+v\n", user)
 }
 
+func TestGetUserById(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+
+	userDb := NewUserRepository(db)
+	user, err := userDb.GetUserById(6)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("%+v\n", user)
+}
+
 //test profile_db.go
 func TestCreateProfile(t *testing.T) {
 	db, err := ConnectDb()
@@ -151,6 +165,21 @@ func TestGetProfile(t *testing.T) {
 	userID := uint64(1)
 
 	profile, err := profileDb.Get(userID)
+	if err != nil {
+		t.Errorf("error profileDb.Get- err: %s", err)
+	}
+
+	fmt.Printf("%+v\n", profile)
+}
+
+func TestGetTest(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+	profileDb := NewProfileDb(db)
+
+	profile, err := profileDb.GetTest()
 	if err != nil {
 		t.Errorf("error profileDb.Get- err: %s", err)
 	}
@@ -268,6 +297,25 @@ func TestGetTechnologiesByUserId(t *testing.T) {
 }
 
 // test plan_service.go
+func TestCreatePS(t *testing.T) {
+	db, err := ConnectDb()
+	if err != nil {
+		t.Error("error connect db")
+	}
+
+	psDb := NewPlanServiceRepository(db)
+	sp := model.PlanService{
+		Title: "debug ko 1",
+		Price: model.PriceStringToDecimal("100000"),
+	}
+
+	err = psDb.Create(&sp)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(sp)
+}
+
 func TestGetSmallestPricePS(t *testing.T) {
 	db, err := ConnectDb()
 	if err != nil {

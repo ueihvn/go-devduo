@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/shopspring/decimal"
 	"github.com/ueihvn/go-devduo/model"
 )
 
@@ -17,8 +16,8 @@ type MentorHandler struct {
 
 type Mentor struct {
 	model.ProfileJSON
-	Price  decimal.Decimal `json:"price"`
-	Mentee uint64          `json:"mentee"`
+	Price  float64 `json:"price"`
+	Mentee uint64  `json:"mentee"`
 }
 
 func NewMentorHandler(bpsRepo model.BookingPlanServiceRepository, psRepo model.PlanServiceRepository, pRepo model.ProfileRepository) *MentorHandler {
@@ -42,7 +41,8 @@ func (mh *MentorHandler) getMentor(profile *model.Profile) (*Mentor, error) {
 	if err != nil {
 		return nil, err
 	}
-	mentor.Price = *price
+	float64Price, _ := price.Float64()
+	mentor.Price = float64Price
 
 	mentee, err := mh.bpsr.CountUserBookPlanServiceByUserID(mentor.UserID)
 	if err != nil {
@@ -159,6 +159,48 @@ func (mh *MentorHandler) GetWithLimitCursor(w http.ResponseWriter, r *http.Reque
 
 }
 
+// swagger:operation GET /api/v1/mentors mentor get
+// ---
+// summary: Get list mentors information
+// parameters:
+// - name: tech
+//   in: query
+//   description: list tech id seperate with ","
+//   required: false
+//   type: array
+//   items:
+//     type: uint64
+//   collectionFormat: csv
+// - name: field
+//   in: query
+//   description: list field id seperate with ","
+//   required: false
+//   type: array
+//   items:
+//     type: uint64
+//   collectionFormat: csv
+// - name: sort
+//   in: query
+//   description: list sort query seperate with ",".Example full_name.asc,price.desc
+//   required: false
+//   type: array
+//   items:
+//     type: string
+//   collectionFormat: csv
+// - name: page
+//   in: query
+//   description: page use for pagination
+//   required: false
+//   allowEmptyValue: true
+//   type: integer
+//   format: unit64
+// responses:
+//   "200":
+//     "$ref": "#/responses/mentorResp"
+//   "403":
+//     "$ref": "#/responses/errorResp"
+//   "500":
+//     "$ref": "#/responses/errorResp"
 func (mh *MentorHandler) GetMentors(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 

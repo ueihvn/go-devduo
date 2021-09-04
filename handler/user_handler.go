@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -61,33 +60,46 @@ func (u *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseJSON)
 }
 
+// swagger:operation GET /api/v1/user/{id} user get
+// ---
+// summary: Get user information by user id
+// parameters:
+// - name: id
+//   in: path
+//   description: id of user
+//   required: true
+//   type: integer
+//   format: unit64
+// responses:
+//   "200":
+//     "$ref": "#/responses/userResp"
+//   "403":
+//     "$ref": "#/responses/errorResp"
+//   "500":
+//     "$ref": "#/responses/errorResp"
 func (u *UserHandler) Get(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	userId, err := parseID(vars["id"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		ToJSON(Response{Status: false, Message: ParseIDError}, w)
 		return
 	}
 
 	user, err := u.ur.GetUserById(userId)
 	if err != nil {
-		fmt.Printf("%+v\n", err)
+		if strings.Contains(err.Error(), "not found") {
+			w.WriteHeader(http.StatusNotFound)
+			ToJSON(Response{Status: false, Message: notFoundError}, w)
+		}
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		ToJSON(Response{Status: false, Message: serverInternalError}, w)
 		return
 	}
 
-	userJSON, err := json.Marshal(user)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(userJSON)
+	ToJSON(Response{Status: true, Message: "successfully get user by id", Data: user}, w)
 }
 
 func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -122,82 +134,4 @@ func (u *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseJSON)
-}
-
-func (u *UserHandler) SignUp(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-
-	var user model.User
-	err := FromJSON(&user, r.Body)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
-		return
-	}
-
-	// + validate user
-
-	// + hash password
-	hashedPassword, err := user.HashPassword()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		ToJSON(Response{Status: false, Message: "err hash password"}, w)
-		return
-	}
-	user.Password = hashedPassword
-
-	// create database
-	err = u.ur.CreateUser(&user)
-	if err != nil {
-		if strings.Contains(err.Error(), "duplicate") {
-			err = errors.New("already exits with email")
-			w.WriteHeader(http.StatusBadRequest)
-		} else {
-			err = errors.New("database error")
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		ToJSON(Response{Status: false, Message: err.Error()}, w)
-		return
-
-	}
-	w.WriteHeader(http.StatusOK)
-	ToJSON(Response{Status: true, Message: "successfully create user", Data: IdResponse{Id: user.ID}}, w)
-}
-
-func (u *UserHandler) LogIn(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-
-	var user model.User
-	err := FromJSON(&user, r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
-		return
-	}
-
-	// + validate user
-	userData, err := u.ur.GetUserByEmail(user.Email)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			err = errors.New("user not found with email")
-			w.WriteHeader(http.StatusBadRequest)
-		} else {
-			err = errors.New("database error")
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-
-		ToJSON(Response{Status: false, Message: err.Error()}, w)
-		return
-	}
-	// check hash
-	err = userData.ComparePassword(user.Password)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "wrong password with email"}, w)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	ToJSON(Response{Status: true, Message: "successfully authorization user", Data: userData}, w)
 }

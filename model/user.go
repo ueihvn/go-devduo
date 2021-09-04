@@ -11,8 +11,8 @@ type User struct {
 	Email               string               `gorm:"not null;unique" json:"email,omitempty"`
 	Password            string               `gorm:"not null" json:"password,omitempty"`
 	Profile             Profile              `json:"-"`
-	PlanServices        []PlanService        `json:"plan_services,omitempty"`
-	BookingPlanServices []BookingPlanService `json:"booking_plan_services,omitempty"`
+	PlanServices        []PlanService        `json:"-"`
+	BookingPlanServices []BookingPlanService `json:"-"`
 	CreatedAt           time.Time            `gorm:"default:CURRENT_TIMESTAMP" json:"-"`
 	UpdatedAt           time.Time            `gorm:"default:CURRENT_TIMESTAMP" json:"-"`
 }

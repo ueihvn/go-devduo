@@ -18,9 +18,19 @@ type Profile struct {
 	UpdatedAt    time.Time      `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at,omitempty"`
 }
 
+// swagger:model Profile
 type ProfileJSON struct {
-	UserID       uint64            `json:"user_id,omitempty"`
-	FullName     string            `json:"full_name,omitempty"`
+	// id for user. required for Create, Update, Get
+	// required: true
+	// min: 1
+	UserID uint64 `json:"user_id,omitempty"`
+
+	// full_name for user. required for Create
+	// required: true
+	// min length: 1
+	FullName string `json:"full_name,omitempty"`
+
+	ThumnailURL  string            `json:"thumnail_url,omitempty"`
 	Technologies []Technology      `json:"technologies,omitempty"`
 	Fields       []Field           `json:"fields,omitempty"`
 	Contact      map[string]string `json:"contact,omitempty"`
@@ -92,6 +102,7 @@ func (pJSON *ProfileJSON) ToProfile() (*Profile, error) {
 	return &Profile{
 		UserID:       pJSON.UserID,
 		FullName:     pJSON.FullName,
+		ThumnailURL:  pJSON.ThumnailURL,
 		Technologies: pJSON.Technologies,
 		Fields:       pJSON.Fields,
 		Contact:      contact,      //from map[string]string to string
@@ -107,6 +118,7 @@ func (profile *Profile) ToProfileJSON() (*ProfileJSON, error) {
 	return &ProfileJSON{
 		UserID:       profile.UserID,
 		FullName:     profile.FullName,
+		ThumnailURL:  profile.ThumnailURL,
 		Technologies: profile.Technologies,
 		Fields:       profile.Fields,
 		Contact:      contact,

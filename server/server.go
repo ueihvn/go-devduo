@@ -1,3 +1,17 @@
+// DevDuo API
+//
+// Documentation for DevDuo API
+//
+// Schemes: http
+// BasePath: /
+// Version: 1.0.0
+//
+// Consumes:
+// - application/json
+//
+// Produces:
+// - application/json
+// swagger:meta
 package server
 
 import (
@@ -38,7 +52,7 @@ func NewServer() (*Server, error) {
 
 	return &Server{
 		Router:                    mux.NewRouter(),
-		profileHandler:            handler.NewProfileHandler(repositories.Pr, repositories.Tr, repositories.Fr),
+		profileHandler:            handler.NewProfileHandler(repositories.Pr),
 		userHandler:               handler.NewUserHandler(repositories.Ur),
 		planServiceHandler:        handler.NewPlanServiceHandler(repositories.Psr),
 		bookingPlanServiceHandler: handler.NewBookingPlanServiceHandler(repositories.Bpsr),
@@ -53,7 +67,6 @@ func (server *Server) Route() {
 	//auth
 	server.Router.HandleFunc("/signup", server.authHandler.SignUp).Methods("POST")
 	server.Router.HandleFunc("/login", server.authHandler.LogIn).Methods("POST")
-	server.Router.HandleFunc("/checkauth", server.authHandler.CheckAuthenticate).Methods("GET")
 	server.Router.HandleFunc("/refresh", server.authHandler.RefreshCookie).Methods("GET")
 	server.Router.HandleFunc("/ok", checkOk).Methods("GET")
 
@@ -73,7 +86,7 @@ func (server *Server) Route() {
 	planServiceRouter.HandleFunc("", server.planServiceHandler.Create).Methods("POST")
 	planServiceRouter.HandleFunc("", server.planServiceHandler.Update).Methods("PUT")
 	planServiceRouter.HandleFunc("/{id:[0-9]+}", server.planServiceHandler.Get).Methods("GET")
-	planServiceRouter.PathPrefix("").Queries("user_id", "{user_id:[0-9]+}").HandlerFunc(server.planServiceHandler.GetByUserID).Methods("GET")
+	planServiceRouter.PathPrefix("").Queries("user_id", "{user_id:[0-9]+}").HandlerFunc(server.planServiceHandler.GetPlanServiceOfUser).Methods("GET")
 	profileRouter.Use(server.authHandler.AuthenticateMiddleware, server.authHandler.CheckContentTypeMiddleware, server.authHandler.PlanServiceAuthorizeMiddleware)
 
 	bookingPlanServiceRouter := server.Router.PathPrefix("/api/v1/bookingplanservice").Subrouter()

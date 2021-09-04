@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/sessions"
 	"github.com/ueihvn/go-devduo/model"
@@ -48,7 +47,7 @@ func (ah *AuthHandler) UserAuthorizeMiddleware(next http.Handler) http.Handler {
 		err := FromJSON(&user, r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			ToJSON(Response{Status: false, Message: parseJsonError}, w)
 			return
 		}
 		session, _ := ah.Store.Get(r, "session.id")
@@ -72,7 +71,7 @@ func (ah *AuthHandler) ProfileAuthorizeMiddleware(next http.Handler) http.Handle
 		err := FromJSON(&profile, r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			ToJSON(Response{Status: false, Message: parseJsonError}, w)
 			return
 		}
 		session, _ := ah.Store.Get(r, "session.id")
@@ -96,7 +95,7 @@ func (ah *AuthHandler) PlanServiceAuthorizeMiddleware(next http.Handler) http.Ha
 		err := FromJSON(&ps, r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			ToJSON(Response{Status: false, Message: parseJsonError}, w)
 			return
 		}
 		session, _ := ah.Store.Get(r, "session.id")
@@ -120,7 +119,7 @@ func (ah *AuthHandler) BookingPlanServiceAuthorizeMiddleware(next http.Handler) 
 		err := FromJSON(&bps, r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+			ToJSON(Response{Status: false, Message: parseJsonError}, w)
 			return
 		}
 		session, _ := ah.Store.Get(r, "session.id")
@@ -150,6 +149,12 @@ func (ah *AuthHandler) CheckContentTypeMiddleware(next http.Handler) http.Handle
 	})
 }
 
+// swagger:route POST /signup auth signupLoginReq
+// signup with email and password
+// responses:
+// 200: signUpResp
+// 400: errorResp
+// 500: errorResp
 func (ah *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
@@ -158,7 +163,7 @@ func (ah *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+		ToJSON(Response{Status: false, Message: parseJsonError}, w)
 		return
 	}
 
@@ -191,6 +196,12 @@ func (ah *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	ToJSON(Response{Status: true, Message: "successfully create user", Data: IdResponse{Id: user.ID}}, w)
 }
 
+// swagger:route POST /login auth signupLoginReq
+// login with email and password
+// responses:
+// 200: signUpResp
+// 400: errorResp
+// 500: errorResp
 func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
@@ -198,7 +209,7 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	err := FromJSON(&user, r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		ToJSON(Response{Status: false, Message: "err deserialize data. Check request"}, w)
+		ToJSON(Response{Status: false, Message: parseJsonError}, w)
 		return
 	}
 
@@ -245,6 +256,13 @@ func (ah *AuthHandler) LogIn(w http.ResponseWriter, r *http.Request) {
 	ToJSON(Response{Status: true, Message: "successfully authorization user", Data: IdResponse{Id: userData.ID}}, w)
 }
 
+// swagger:route GET /refresh auth noReq
+// refresh cookie
+// responses:
+// 200: refreshCookieResp
+// 400: errorResp
+// 401: errorResp
+// 500: errorResp
 func (ah *AuthHandler) RefreshCookie(w http.ResponseWriter, r *http.Request) {
 	session, _ := ah.Store.Get(r, "session.id")
 	if session.Values["authenticated"] != nil && session.Values["authenticated"] != false {
@@ -258,20 +276,9 @@ func (ah *AuthHandler) RefreshCookie(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("%+v\n", err)
 			return
 		}
-
-	} else {
 		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		ToJSON(Response{Status: false, Message: "Unauthorized, please login"}, w)
-	}
-}
-
-func (ah *AuthHandler) CheckAuthenticate(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-	fmt.Printf("%+v/n", r.Header)
-	session, _ := ah.Store.Get(r, "session.id")
-	if session.Values["authenticated"] != nil && session.Values["authenticated"] != false {
-		w.Write([]byte(time.Now().String()))
+		w.WriteHeader(http.StatusOK)
+		ToJSON(Response{Status: true, Message: "successfully refresh cookie"}, w)
 	} else {
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
