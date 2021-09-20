@@ -48,10 +48,12 @@ func MigrateDb(db *gorm.DB) error {
 	db.Migrator().DropTable(
 		&model.Technology{},
 		&model.Field{},
-		&model.User{},
 		&model.Profile{},
+		&model.User{},
 		&model.PlanService{},
 		&model.BookingPlanService{},
+		"profile_fields",
+		"profile_technologies",
 	)
 	err := db.AutoMigrate(
 		&model.Technology{},
@@ -63,7 +65,7 @@ func MigrateDb(db *gorm.DB) error {
 	)
 
 	if err != nil {
-		return errors.New("err automigrate")
+		return err
 	}
 
 	return nil
